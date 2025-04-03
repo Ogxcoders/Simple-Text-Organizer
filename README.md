@@ -93,24 +93,3 @@ InputManager.addInput("New Label", "Default Value")
 3. More export formats (CSV, XML)
 4. Input validation
 5. Drag-and-drop reordering
-
-## License
-
-MIT License - Free for personal and commercial use
-
-## Support
-
-For questions or feature requests:
-- Email: support@dynamicinput.com
-- Twitter: @dynamicinput
-```
-
-This README provides:
-1. Clear feature overview with emoji icons
-2. Multiple practical use cases
-3. Technical implementation details
-4. Customization guidance
-5. Future roadmap
-6. Support information
-
-The tool is versatile enough for both technical and non-technical users across various domains. The client-side nature makes it particularly useful for quick data organization without server requirements.
