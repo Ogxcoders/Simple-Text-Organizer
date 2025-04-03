@@ -3,6 +3,7 @@
 
 ![Dynamic Input Manager Screenshot](https://raw.githubusercontent.com/Ogxcoders/Simple-Text-Organizer/refs/heads/main/IMG_20250403_164509.jpg)
 
+![](https://raw.githubusercontent.com/Ogxcoders/Simple-Text-Organizer/refs/heads/main/IMG_20250403_165321.jpg)
 A flexible, client-side input management system with dark/light theme support, data persistence, and export/import capabilities.
 
 ## Key Features
