@@ -1,0 +1,718 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flexible Text Extractor</title>
+    <style>
+        
+        
+        
+        
+        :root {
+            --main-color: #e61355;
+            --main-light: rgba(230, 19, 85, 0.6);
+            --secondary-color: rgba(230, 19, 85, 0.1);
+            --hover-color: rgba(230, 19, 85, 0.1);
+            --focus-color: rgba(230, 19, 85, 0.4);
+            --bg-light: #ffffff;
+            --bg-dark: #121212;
+            --text-light: #000;
+            --text-dark: #fff;
+            --gutter: 10px;
+            /* Consistent spacing value */
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            padding-top: 1px; /* Prevent margin collapsing */
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 10px auto 0;
+            /* Increased spacing from the top and centered horizontally */
+            padding: 20px;
+            background: var(--bg-light);
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            display: flow-root; /* Prevent margin collapsing */
+        }
+
+        h2 {
+            color: var(--main-color);
+            margin-bottom: var(--gutter);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dark-mode-toggle {
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+        }
+
+        .dark-mode-toggle svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .input-group {
+        margin: 30px auto 0;
+            margin-bottom: var(--gutter);
+            padding: 15px;
+            background: var(--secondary-color);
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+            position: relative;
+        }
+
+        .input-group:hover {
+            background: var(--hover-color);
+        }
+
+        .group-number {
+        margin: -20px ;
+            position: absolute;
+            opacity: 75%;
+            top: 5px;
+            left: 5px;
+            background: var(--main-color);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        label {
+            display: block;
+            margin: 10px auto 0;
+            margin-bottom: 5px;
+            color: var(--main-color);
+            font-weight: bold;
+        }
+
+        textarea.editable-label {
+        margin: 10px auto 0;
+            width: 100%;
+            /* Full width */
+            padding: 8px;
+            border: 2px solid var(--main-light);
+            border-radius: 5px;
+            font-weight: bold;
+            color: var(--text-light);
+            background-color: var(--bg-light);
+            resize: none;
+            overflow: hidden;
+            box-sizing: border-box;
+            /* Include padding in width */
+        }
+
+        textarea.extract-input {
+            width: 100%;
+            /* Full width */
+            padding: 10px;
+            border: 2px solid var(--main-light);
+            border-radius: 5px;
+            margin-top: 8px;
+            box-sizing: border-box;
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            resize: none;
+            overflow: hidden;
+        }
+
+        textarea:focus {
+            border-color: var(--focus-color);
+            outline: none;
+        }
+
+        .char-count {
+            margin-top: 4px;
+            font-size: 0.9rem;
+            text-align: right;
+        }
+
+        .remove-container {
+            margin-top: 10px;
+            text-align: right;
+        }
+
+        .delete-btn {
+            background: var(--main-light);
+            opacity: 80%;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            opacity: 0.9;
+        }
+
+        .output-box {
+            border: 2px solid var(--main-color);
+            padding: 20px;
+            margin-top: var(--gutter);
+            background-color: var(--bg-light);
+            border-radius: 5px;
+            white-space: pre-line;
+            text-align: left;
+            color: var(--text-light);
+            overflow-wrap: break-word;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .output-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            background: var(--hover-color);
+            color: #e61355;
+            opacity: 90%;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .add-button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: var(--gutter);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .add-button svg {
+            width: 20px;
+            height: 20px;
+            opacity: 80%;
+            vertical-align: middle;
+            margin-right: 8px;
+            fill: var(--main-light);
+        }
+
+        body.dark-mode {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        body.dark-mode .container {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+            box-shadow: 0 2px 15px rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode textarea,
+        body.dark-mode .output-box {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+            border-color: var(--main-light);
+        }
+
+        body.dark-mode h2,
+        body.dark-mode label {
+            color: var(--main-color);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: black;
+            opacity: 80%;
+            color: #e61355;
+            padding: 12px 24px;
+            border-radius: 5px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        /* New styles for prefix/suffix */
+        .prefix-suffix-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+            width: 100%;
+            /* Full width */
+        }
+
+        .prefix-suffix-container label {
+            font-size: 0.8em;
+            color: var(--main-color);
+            white-space: nowrap;
+        }
+
+        .prefix-suffix-container input[type="text"] {
+            width: 100%;
+            /* Full width */
+            padding: 5px;
+            border: 1px solid var(--main-light);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        /* Add New Field button below input fields */
+        #inputContainer {
+            margin-bottom: var(--gutter);
+        }
+
+        /* Toggle Prefix/Suffix Button */
+        .toggle-container {
+            text-align: right;
+            margin-bottom: var(--gutter);
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    </style>
+    
+    
+    
+    
+</head>
+
+<body>
+    
+    
+    
+    
+    <div class="container">
+        <h2>
+            Flexible Text Generator 
+            <span class="dark-mode-toggle" onclick="toggleDarkMode()">
+                <!-- Moon icon for light mode -->
+                <svg class="moon-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 22C17.5228 22 22 17.5228 22 12C22 11.5373 21.3065 11.4608 21.0672 11.8568C19.9289 13.7406 17.8615 15 15.5 15C11.9101 15 9 12.0899 9 8.5C9 6.13845 10.2594 4.07105 12.1432 2.93276C12.5392 2.69347 12.4627 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                        fill=var(--main-light) opacity:80%; />
+                </svg>
+                <!-- Sun icon for dark mode -->
+                <svg class="sun-icon" style="display: none;" viewBox="0 0 24 24" fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M12 2V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path d="M12 20V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path d="M4 12L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path opacity="0.5" d="M21.9999 12L19.9999 12" stroke="currentColor" stroke-width="1.5"
+                        stroke-linecap="round" />
+                    <path d="M22 12L20 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path opacity="0.5" d="M19.7778 4.22266L17.5558 6.25424" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" />
+                    <path opacity="0.5" d="M4.22217 4.22266L6.44418 6.25424" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" />
+                    <path opacity="0.5" d="M6.44434 17.5557L4.22211 19.7779" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" />
+                    <path opacity="0.5" d="M19.7778 19.7773L17.5558 17.5551" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </span>
+        </h2>
+
+        <!-- Toggle Prefix/Suffix Button -->
+        <div class="toggle-container">
+            <button id="togglePrefixSuffixButton" onclick="togglePrefixSuffix()">Show Prefix/Suffix</button>
+        </div>
+
+        <div id="inputContainer">
+            <!-- Only one default input group (non-removable) -->
+            <div class="input-group first-input-group">
+                <span class="group-number"></span>
+
+                <div class="prefix-suffix-container" style="display:none;">
+                    <label for="labelPrefix1">Label Prefix:</label>
+                    <input type="text" id="labelPrefix1" class="label-prefix" placeholder="Prefix">
+                    <label for="labelSuffix1">Label Suffix:</label>
+                    <input type="text" id="labelSuffix1" class="label-suffix" placeholder="Suffix">
+                </div>
+
+                <label>
+                    <textarea class="editable-label" rows="1">Extract Text 1</textarea>
+                </label>
+
+                <div class="prefix-suffix-container" style="display:none;">
+                    <label for="textPrefix1">Text Prefix:</label>
+                    <input type="text" id="textPrefix1" class="text-prefix" placeholder="Prefix">
+                    <label for="textSuffix1">Text Suffix:</label>
+                    <input type="text" id="textSuffix1" class="text-suffix" placeholder="Suffix">
+                </div>
+
+                <textarea class="extract-input" rows="1" placeholder="Enter text"></textarea>
+                <div class="char-count">Characters: 0</div>
+            </div>
+        </div>
+
+        <!-- Add New Field button below input fields -->
+        <button class="add-button" onclick="addInput()">
+            <svg width="80px" height="80px" viewBox="0 0 24 24" fill="#fffff" xmlns="http://www.w3.org/2000/svg">
+                <path clip-rule="evenodd"
+                    d="M10.4269 2.42148C11.4003 1.85951 12.5996 1.8595 13.573 2.42148L19.5087 5.84848C20.4821 6.41046 21.0817 7.44904 21.0817 8.573V15.427C21.0817 16.551 20.4821 17.5895 19.5087 18.1515L13.573 21.5785C12.5996 22.1405 11.4003 22.1405 10.4269 21.5785L4.49122 18.1515C3.51784 17.5895 2.91821 16.551 2.91821 15.427V8.573C2.91821 7.44904 3.51784 6.41046 4.49122 5.84848L10.4269 2.42148ZM15.75 12C15.75 12.4142 15.4142 12.75 15 12.75H12.75V15C12.75 15.4142 12.4142 15.75 12 15.75C11.5858 15.75 11.25 15.4142 11.25 15V12.75H9C8.58579 12.75 8.25 12.4142 8.25 12C8.25 11.5858 8.58579 11.25 9 11.25H11.25V9C11.25 8.58579 11.5858 8.25 12 8.25C12.4142 8.25 12.75 8.58579 12.75 9V11.25H15C15.4142 11.25 15.75 11.5858 15.75 12Z"
+                    fill="#e61355" opacity="" fill-rule="evenodd" /></svg>
+            Add New Field
+        </button>
+
+        <!-- Generate output and output box -->
+        <button onclick="generateOutput()">Generate Output</button>
+        <div class="output-box" id="output"></div>
+        <div class="output-buttons">
+            <button onclick="clearOutput()">Clear Output</button>
+            <button onclick="copyOutput()">Copy Output</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <script>
+        let nextId = 2; // Start ID for dynamically added fields
+
+        // Auto-resize a textarea based on its content.
+        function autoResizeTextarea(textarea) {
+            textarea.style.height = "auto";
+            textarea.style.height = textarea.scrollHeight + "px";
+        }
+
+        // Update the character count for a given extract-input textarea.
+        function updateCharCount(textarea) {
+            const countDisplay = textarea.parentElement.querySelector('.char-count');
+            if (countDisplay) {
+                countDisplay.innerText = "Characters: " + textarea.value.length;
+            }
+        }
+
+        // Update the numbered badge for all input groups.
+        function updateGroupNumbers() {
+            const groups = document.querySelectorAll('#inputContainer .input-group');
+            groups.forEach((group, index) => {
+                let badge = group.querySelector('.group-number');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'group-number';
+                    group.insertBefore(badge, group.firstChild);
+                }
+                badge.innerText = index + 1;
+            });
+        }
+
+        function addInput(label = `Extract Text ${document.querySelectorAll('#inputContainer .input-group').length + 1}`, canRemove = true) {
+            const container = document.getElementById('inputContainer');
+
+            const newGroup = document.createElement('div');
+            newGroup.className = 'input-group';
+            const groupId = nextId++;
+
+            newGroup.innerHTML = `
+                <span class="group-number"></span>
+
+                <div class="prefix-suffix-container" style="display:none;">
+                    <label for="labelPrefix${groupId}">Label Prefix:</label>
+                    <input type="text" id="labelPrefix${groupId}" class="label-prefix" placeholder="Prefix">
+                    <label for="labelSuffix${groupId}">Label Suffix:</label>
+                    <input type="text" id="labelSuffix${groupId}" class="label-suffix" placeholder="Suffix">
+                </div>
+
+                <label>
+                    <textarea class="editable-label" rows="1">${label}</textarea>
+                </label>
+
+                <div class="prefix-suffix-container" style="display:none;">
+                    <label for="textPrefix${groupId}">Text Prefix:</label>
+                    <input type="text" id="textPrefix${groupId}" class="text-prefix" placeholder="Prefix">
+                    <label for="textSuffix${groupId}">Text Suffix:</label>
+                    <input type="text" id="textSuffix${groupId}" class="text-suffix" placeholder="Suffix">
+                </div>
+
+                <textarea class="extract-input" rows="1" placeholder="Enter text"></textarea>
+                <div class="char-count">Characters: 0</div>
+                ${canRemove ? '<div class="remove-container"><button onclick="removeInput(this)" class="delete-btn">Remove</button></div>' : ''}
+            `;
+            container.appendChild(newGroup);
+
+            newGroup.querySelectorAll("textarea").forEach(ta => {
+                ta.addEventListener("input", function () {
+                    autoResizeTextarea(this);
+                    if (this.classList.contains('extract-input')) {
+                        updateCharCount(this);
+                    }
+                    saveState();
+                });
+                autoResizeTextarea(ta);
+                if (ta.classList.contains('extract-input')) updateCharCount(ta);
+            });
+
+            updateGroupNumbers();
+            saveState();
+        }
+
+        // Removes an input group
+        function removeInput(button) {
+            const group = button.closest('.input-group');
+            if (document.querySelectorAll('#inputContainer .input-group').length === 1) {
+                showToast("At least one input field must remain.");
+                return;
+            }
+            group.remove();
+            updateGroupNumbers();
+            saveState();
+        }
+
+        let prefixSuffixVisible = false;
+
+        function togglePrefixSuffix() {
+            prefixSuffixVisible = !prefixSuffixVisible;
+            const containers = document.querySelectorAll('.prefix-suffix-container');
+            containers.forEach(container => {
+                container.style.display = prefixSuffixVisible ? 'flex' : 'none';
+            });
+
+            // Update button text
+            const button = document.getElementById('togglePrefixSuffixButton');
+            button.textContent = prefixSuffixVisible ? 'Hide Prefix/Suffix' : 'Show Prefix/Suffix';
+
+            saveState();
+        }
+
+        // Generates a formatted output
+        function generateOutput() {
+            const groups = document.querySelectorAll('#inputContainer .input-group');
+            let outputText = '';
+            groups.forEach(group => {
+                const groupId = group.querySelector('.editable-label').id.replace('editableLabel', '');
+
+                const labelPrefix = group.querySelector('.label-prefix')?.value || '';
+                const labelSuffix = group.querySelector('.label-suffix')?.value || '';
+                const labelTextarea = group.querySelector('.editable-label');
+                const contentTextarea = group.querySelector('.extract-input');
+                const textPrefix = group.querySelector('.text-prefix')?.value || '';
+                const textSuffix = group.querySelector('.text-suffix')?.value || '';
+
+                const labelText = labelTextarea ? labelPrefix + labelTextarea.value.trim() + labelSuffix : '';
+                const contentText = textPrefix + contentTextarea.value + textSuffix;
+
+                outputText += ` ${labelText}\n${contentText}\n\n`;
+            });
+            document.getElementById('output').innerText = outputText.trim();
+        }
+
+        // Copies the output text to the clipboard.
+        function copyOutput() {
+            const outputText = document.getElementById('output').innerText;
+            if (!outputText) return showToast('Nothing to copy.');
+            navigator.clipboard.writeText(outputText)
+                .then(() => showToast('✓ Output copied to clipboard!'))
+                .catch(() => showToast('Failed to copy output.'));
+        }
+
+        // Clears the output area.
+        function clearOutput() {
+            document.getElementById('output').innerText = "";
+            showToast('Output cleared');
+        }
+
+        // Toggles dark mode and swaps the sun/moon icons.
+        function toggleDarkMode() {
+            const body = document.body;
+            body.classList.toggle('dark-mode');
+            const moonIcon = document.querySelector('.moon-icon');
+            const sunIcon = document.querySelector('.sun-icon');
+            if (body.classList.contains('dark-mode')) {
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'block';
+            } else {
+                moonIcon.style.display = 'block';
+                sunIcon.style.display = 'none';
+            }
+        }
+
+        // Shows a toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Function to set a cookie
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
+        // Function to get a cookie
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        // Save current state to cookies
+        function saveState() {
+            const inputGroups = Array.from(document.querySelectorAll('.input-group')).map(group => {
+                const groupId = group.querySelector('.editable-label').id.replace('editableLabel', '');
+                return {
+                    labelText: group.querySelector('.editable-label').value,
+                    extractText: group.querySelector('.extract-input').value,
+                    labelPrefix: group.querySelector('.label-prefix')?.value || '',
+                    labelSuffix: group.querySelector('.label-suffix')?.value || '',
+                    textPrefix: group.querySelector('.text-prefix')?.value || '',
+                    textSuffix: group.querySelector('.text-suffix')?.value || ''
+                };
+            });
+
+            // Save to cookies
+            setCookie('prefixSuffixVisible', prefixSuffixVisible, 30);
+            setCookie('inputGroups', JSON.stringify(inputGroups), 30);
+        }
+
+        // Load saved state from cookies
+        function loadState() {
+            const prefixSuffixVisibleCookie = getCookie('prefixSuffixVisible');
+            if (prefixSuffixVisibleCookie) {
+                prefixSuffixVisible = prefixSuffixVisibleCookie === 'true'; // Convert string to boolean
+                // Update button text
+                const button = document.getElementById('togglePrefixSuffixButton');
+                button.textContent = prefixSuffixVisible ? 'Hide Prefix/Suffix' : 'Show Prefix/Suffix';
+            }
+
+            const inputGroupsCookie = getCookie('inputGroups');
+            if (inputGroupsCookie) {
+                const inputGroups = JSON.parse(inputGroupsCookie);
+
+                // Ensure at least one input group exists
+                if (inputGroups && inputGroups.length > 0) {
+                    const firstGroup = document.querySelector('.input-group');
+                    firstGroup.querySelector('.editable-label').value = inputGroups[0].labelText;
+                    firstGroup.querySelector('.extract-input').value = inputGroups[0].extractText;
+                    firstGroup.querySelector('.label-prefix').value = inputGroups[0].labelPrefix;
+                    firstGroup.querySelector('.label-suffix').value = inputGroups[0].labelSuffix;
+                    firstGroup.querySelector('.text-prefix').value = inputGroups[0].textPrefix;
+                    firstGroup.querySelector('.text-suffix').value = inputGroups[0].textSuffix;
+
+                    // Add additional input groups if needed
+                    for (let i = 1; i < inputGroups.length; i++) {
+                        addInput();
+                        const newGroup = document.querySelectorAll('.input-group')[i];
+                        newGroup.querySelector('.editable-label').value = inputGroups[i].labelText;
+                        newGroup.querySelector('.extract-input').value = inputGroups[i].extractText;
+                        newGroup.querySelector('.label-prefix').value = inputGroups[i].labelPrefix;
+                        newGroup.querySelector('.label-suffix').value = inputGroups[i].labelSuffix;
+                        newGroup.querySelector('.text-prefix').value = inputGroups[i].textPrefix;
+                        newGroup.querySelector('.text-suffix').value = inputGroups[i].textSuffix;
+                    }
+                }
+            }
+
+            // Set visibility of prefix/suffix containers
+            const containers = document.querySelectorAll('.prefix-suffix-container');
+            containers.forEach(container => {
+                container.style.display = prefixSuffixVisible ? 'flex' : 'none';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadState(); // Load saved state on page load
+            const initialTextareas = document.querySelectorAll("textarea");
+            initialTextareas.forEach(ta => {
+                ta.addEventListener("input", function () {
+                    autoResizeTextarea(this);
+                    if (this.classList.contains('extract-input')) {
+                        updateCharCount(this);
+                    }
+                    saveState();
+                });
+                autoResizeTextarea(ta);
+                if (ta.classList.contains('extract-input')) updateCharCount(ta);
+            });
+            updateGroupNumbers(); // Initial numbering
+        });
+    </script>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+</body>
+
+</html>
