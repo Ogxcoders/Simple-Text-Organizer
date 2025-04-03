@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Input Manager</title>
+    <style>
+        :root {
+            --main-color: #e61355;
+            --second-color: #f48fb1;
+            --third-color: #f8bbd0;
+            --bg-color: #ffffff;
+            --text-color: #333333;
+        }
+
+        [data-theme="dark"] {
+            --main-color: #ff6090;
+            --second-color: #e61355;
+            --third-color: #7a0b2d;
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .input-label {
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--main-color);
+            padding: 2px;
+        }
+
+        .input-label[contenteditable="true"] {
+            border-bottom: 1px dashed var(--main-color);
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--third-color);
+            border-radius: 5px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn {
+            background-color: var(--main-color);
+            color: white;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: transparent;
+            color: var(--main-color);
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .output-area {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid var(--second-color);
+            border-radius: 5px;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+        }
+
+        .copy-btn {
+            background-color: var(--second-color);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="theme-toggle" onclick="ThemeManager.toggleTheme()">
+            <svg width="24" height="24" viewBox="0 0 24 24">
+                <path d="M12 3a9 9 0 00-9 9 9 9 0 009 9 9 9 0 009-9 9 9 0 00-9-9zm0 16a7 7 0 110-14 7 7 0 010 14z"></path>
+            </svg>
+        </div>
+
+        <h1>Dynamic Input Manager</h1>
+
+        <button class="button add-btn" onclick="InputManager.addInput()">+</button>
+        <button class="button copy-btn" onclick="OutputManager.copyOutput()">Copy Output</button>
+        <button class="button" onclick="DataManager.exportData()">Export</button>
+        <input type="file" id="fileInput" accept=".json" onchange="DataManager.importData(event)">
+        <button class="button" onclick="InputManager.clearAll()">Clear All</button>
+
+        <div class="output-area" id="output"></div>
+        <div id="inputContainer"></div>
+    </div>
+
+    <script>
+        // Utility functions for managing cookies
+        const CookieManager = {
+            setCookie: function(name, value, days = 365) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                const expires = "expires=" + date.toUTCString();
+                document.cookie = name + "=" + JSON.stringify(value) + ";" + expires + ";path=/";
+            },
+            getCookie: function(name) {
+                const cookieName = name + "=";
+                const decodedCookie = decodeURIComponent(document.cookie);
+                const cookieArray = decodedCookie.split(';');
+                for (let i = 0; i < cookieArray.length; i++) {
+                    let cookie = cookieArray[i];
+                    while (cookie.charAt(0) === ' ') {
+                        cookie = cookie.substring(1);
+                    }
+                    if (cookie.indexOf(cookieName) === 0) {
+                        try {
+                            return JSON.parse(cookie.substring(cookieName.length, cookie.length));
+                        } catch (error) {
+                            console.error(`Error parsing cookie ${name}:`, error);
+                            return null;
+                        }
+                    }
+                }
+                return null;
+            },
+
+            deleteCookie: function(name) {
+                document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            }
+        };
+
+        // Theme Management
+        const ThemeManager = {
+            toggleTheme: function() {
+                const body = document.body;
+                const currentTheme = body.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                if (currentTheme) {
+                    body.removeAttribute('data-theme');
+                } else {
+                    body.setAttribute('data-theme', 'dark');
+                }
+                body.setAttribute('data-theme', newTheme);
+                CookieManager.setCookie('theme', newTheme);
+            },
+
+            applyTheme: function() {
+                const savedTheme = CookieManager.getCookie('theme');
+                if (savedTheme === 'dark') {
+                    document.body.setAttribute('data-theme', 'dark');
+                }
+            }
+        };
+
+        // Input Management
+        const InputManager = {
+            inputContainer: document.getElementById('inputContainer'),
+
+            createInput: function(labelText = "Caption", value = "") {
+                const div = document.createElement('div');
+                div.className = 'input-container';
+                div.innerHTML = `
+                    <div class="input-label" contenteditable="true" oninput="InputManager.updateOutput()">${labelText}</div>
+                    <input type="text" class="input-box" value="${value}" oninput="InputManager.updateOutput()">
+                    <button class="delete-btn" onclick="InputManager.removeInput(this)">×</button>
+                `;
+                return div;
+            },
+
+            addInput: function(labelText = "Caption", value = "") {
+                const newInput = InputManager.createInput(labelText, value);
+                InputManager.inputContainer.appendChild(newInput);
+                InputManager.updateOutput();
+            },
+
+            removeInput: function(element) {
+                element.parentElement.remove();
+                InputManager.updateOutput();
+            },
+
+            clearAll: function() {
+                if (confirm("This will clear all data. Are you sure?")) {
+                    InputManager.inputContainer.innerHTML = '';
+                    OutputManager.updateOutput('');
+                    DataManager.saveInputs([]);
+                    // CookieManager.deleteCookie('importedData'); // Delete imported data cookie
+                }
+            },
+
+            getInputs: function() {
+                return Array.from(document.querySelectorAll('.input-container')).map(container => {
+                    return {
+                        caption: container.querySelector('.input-label').innerText,
+                        text: container.querySelector('.input-box').value
+                    };
+                });
+            },
+
+            restoreInputs: function(inputs) {
+                // Clear existing inputs before restoring
+                InputManager.inputContainer.innerHTML = '';
+                inputs.forEach(input => InputManager.addInput(input.caption, input.text));
+            },
+
+            updateOutput: function() {
+                const inputs = InputManager.getInputs();
+                const outputText = inputs.map(item => `${item.caption}: ${item.text}`).join('\n');
+                OutputManager.updateOutput(outputText);
+                DataManager.saveInputs(inputs);
+            }
+        };
+
+        // Output Management
+        const OutputManager = {
+            outputArea: document.getElementById('output'),
+
+            updateOutput: function(text) {
+                OutputManager.outputArea.textContent = text;
+            },
+
+            copyOutput: function() {
+                navigator.clipboard.writeText(OutputManager.outputArea.textContent).then(() => {
+                    alert("Output copied to clipboard!");
+                });
+            }
+        };
+
+        // Data Management (Cookies and File I/O)
+        const DataManager = {
+            saveInputs: function(inputs) {
+                CookieManager.setCookie('importedData', inputs); // Save imported data to cookie
+            },
+
+            // loadInputs: function() {
+            //     return CookieManager.getCookie('inputs') || [];
+            // },
+
+            exportData: function() {
+                const inputs = InputManager.getInputs(); // Use current inputs for export
+                const blob = new Blob([JSON.stringify(inputs, null, 2)], {
+                    type: "application/json"
+                });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = "inputs.json";
+                link.click();
+            },
+
+            importData: function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        DataManager.saveInputs(importedData); // Save to cookie immediately
+
+                        // Restore inputs from imported data
+                        InputManager.restoreInputs(importedData);
+                        InputManager.updateOutput();
+
+                    } catch (error) {
+                        console.error("Error parsing imported data:", error);
+                        alert("Error: Could not parse the imported file.");
+                    } finally {
+                        event.target.value = ''; // Reset file input
+                    }
+                };
+                reader.readAsText(file);
+            },
+
+            // restoreImportedData: function() {
+            //     const importedData = CookieManager.getCookie('importedData');
+            //     if (importedData) {
+            //         InputManager.restoreInputs(importedData);
+            //         InputManager.updateOutput();
+            //     }
+            // }
+        };
+
+        // Initialization
+        window.onload = function() {
+            ThemeManager.applyTheme();
+            // const savedInputs = DataManager.loadInputs();
+            // InputManager.restoreInputs(savedInputs);
+
+            // Restore imported data on page load
+            // DataManager.restoreImportedData();
+            const importedData = CookieManager.getCookie('importedData');
+            if (importedData) {
+                InputManager.restoreInputs(importedData);
+                InputManager.updateOutput();
+            }
+        };
+    </script>
+</body>
+
+</html>
